@@ -1,15 +1,11 @@
 "use client";
+
+import { supabase } from "../supabase-client";
 import { useEffect, useState } from "react";
-import {Auth} from "./components/auth";
-import { supabase } from "./supabase-client";
-import { Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
-export default function Home() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
+export default function ClientListDashboard() {
+  
   interface Clients {
     id: number;
     client_name: string;
@@ -18,13 +14,7 @@ export default function Home() {
   }
 
   const [clients, setClients] = useState<Clients[]>([]);
-
-  const fetchSession = async () => {
-    const currentSession = await supabase.auth.getSession();
-    console.log(currentSession);
-    setSession(currentSession.data.session);
-    setLoading(false);
-  };
+  const router = useRouter();
 
   const fetchClients = async () => {
     const { error, data } = await supabase
@@ -40,31 +30,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    fetchClients();
   }, []);
-
-  useEffect(() => {
-    if (session) {
-      // Check if this is a client user and redirect them
-      const isClient = session.user?.user_metadata?.user_type === 'client';
-      if (isClient) {
-        router.push('/client_jobs');
-        return;
-      }
-      // Only fetch clients for regular users
-      fetchClients();
-    }
-  }, [session, router]);
 
   const handleCreateClient = () => {
     router.push("/create_client");
@@ -74,23 +41,11 @@ export default function Home() {
     router.push(`/manage_clients?id=${clientId}`);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    // Add your logout logic here
+    router.push("/login"); // or wherever you want to go
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Auth />;
-  }
-
-  // If we get here, it's a regular user (not a client)
   return (
     <div className="min-h-screen bg-black text-white p-8">
       {/* Header with User Info */}
@@ -101,11 +56,12 @@ export default function Home() {
               Pic
             </div>
             <div>
-              <div className="text-lg">{session?.user?.email || 'User'}</div>
+              <div className="text-lg">User</div>
               <div className="text-lg">Name</div>
             </div>
           </div>
           
+          {/* Optional: Logout or Settings Button */}
           <button 
             onClick={handleLogout}
             className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
@@ -169,7 +125,8 @@ export default function Home() {
                 {client.client_email}
               </div>
               <div className="border-r border-white p-6 text-center">
-                0 of 0              </div>
+                0 of 0
+              </div>
               <div className="p-6 flex justify-center items-center">
                 <button 
                   onClick={() => handleManageClient(client.id)}
