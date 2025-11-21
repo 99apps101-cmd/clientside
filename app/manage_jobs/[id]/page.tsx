@@ -18,10 +18,15 @@ export default function ManageJob() {
   const [error, setError] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [files, setFiles] = useState<any[]>([]);
+  const [revisionNumber, setRevisionNumber] = useState(1);
 
   useEffect(() => {
     if (jobId) {
       fetchJobData();
+      fetchFiles();
     }
   }, [jobId]);
 
@@ -88,6 +93,178 @@ export default function ManageJob() {
     }
   };
 
+
+  
+  const fetchFiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("job_files")
+        .select("*")
+        .eq("job_id", parseInt(jobId as string))
+        .order("revision_number", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching files:", error);
+      } else {
+        setFiles(data || []);
+        // Set next revision number
+        if (data && data.length > 0) {
+          setRevisionNumber(data[0].revision_number + 1);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!file) {
+      alert("Please select a file first");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("You must be logged in to upload files");
+        setUploading(false);
+        return;
+      }
+
+      // Get presigned URL from API
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          jobId: jobId,
+          userId: user.id,
+          revisionNumber: revisionNumber,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadUrl, key } = await response.json();
+
+      // Upload file to R2 with progress tracking
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100;
+          setUploadProgress(Math.round(progress));
+        }
+      });
+
+      xhr.addEventListener('load', async () => {
+        if (xhr.status === 200) {
+          // Save file metadata to Supabase
+          const { error: dbError } = await supabase
+            .from('job_files')
+            .insert({
+              job_id: parseInt(jobId as string),
+              file_key: key,
+              file_name: file.name,
+              file_size: file.size,
+              revision_number: revisionNumber,
+              uploaded_by: user.id,
+            });
+
+          if (dbError) {
+            console.error('Error saving file metadata:', dbError);
+            alert('File uploaded but failed to save metadata');
+          } else {
+            alert('File uploaded successfully!');
+            setFile(null);
+            setRevisionNumber(revisionNumber + 1);
+            fetchFiles(); // Refresh file list
+          }
+        } else {
+          throw new Error('Upload failed');
+        }
+        setUploading(false);
+        setUploadProgress(0);
+      });
+
+      xhr.addEventListener('error', () => {
+        alert('Upload failed');
+        setUploading(false);
+        setUploadProgress(0);
+      });
+
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload file');
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleDownloadFile = async (fileKey: string, fileName: string) => {
+    try {
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get download URL');
+      }
+
+      const { downloadUrl } = await response.json();
+      
+      // Open download in new tab
+      window.open(downloadUrl, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download file');
+    }
+  };
+
+  const handleDeleteFile = async (fileId: number, fileKey: string) => {
+    const confirmDelete = confirm('Are you sure you want to delete this file?');
+    if (!confirmDelete) return;
+
+    try {
+      // Delete from R2
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileKey }),
+      });
+
+      // Delete from database
+      const { error } = await supabase
+        .from('job_files')
+        .delete()
+        .eq('id', fileId);
+
+      if (error) {
+        console.error('Error deleting file:', error);
+        alert('Failed to delete file');
+      } else {
+        alert('File deleted successfully');
+        fetchFiles();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to delete file');
+    }
+  };
+
   const handleBack = () => {
     if (clientId) {
       router.push(`/manage_clients?id=${clientId}`);
@@ -137,7 +314,7 @@ export default function ManageJob() {
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() && !file) return;
+    if (!newComment.trim()) return;
 
     try {
       const { error } = await supabase
@@ -154,11 +331,17 @@ export default function ManageJob() {
       }
 
       setNewComment("");
-      setFile(null);
       fetchJobData();
     } catch (error) {
       console.error("Error:", error);
     }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
   };
 
   if (loading) {
@@ -188,7 +371,7 @@ export default function ManageJob() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-8">
       <div className="border border-white p-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-3 gap-8">
           {/* Left Column - Job Details */}
@@ -229,20 +412,81 @@ export default function ManageJob() {
               </div>
             </div>
 
-            {/* Upload File Button */}
-            <div>
+            {/* Upload File Section */}
+            <div className="border border-white rounded-lg p-6">
+              <div className="text-lg font-medium mb-4">Upload File (Revision #{revisionNumber})</div>
               <input
                 type="file"
                 id="fileUpload"
                 className="hidden"
                 onChange={handleFileChange}
+                disabled={uploading}
               />
               <label htmlFor="fileUpload">
-                <div className="border border-white rounded-lg px-8 py-3 inline-block cursor-pointer hover:bg-white hover:text-black transition-colors">
-                  {file ? file.name : 'Upload File Button'}
+                <div className="border border-white rounded-lg px-8 py-3 inline-block cursor-pointer hover:bg-white hover:text-black transition-colors mb-4">
+                  {file ? file.name : 'Select File'}
                 </div>
               </label>
+
+              {file && (
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-400">
+                    Selected: {file.name} ({formatFileSize(file.size)})
+                  </div>
+                  <button
+                    onClick={handleFileUpload}
+                    disabled={uploading}
+                    className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? `Uploading... ${uploadProgress}%` : 'Upload File'}
+                  </button>
+                </div>
+              )}
+
+              {uploading && (
+                <div className="mt-4">
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-white h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Uploaded Files List */}
+            {files.length > 0 && (
+              <div className="border border-white rounded-lg p-6">
+                <div className="text-lg font-medium mb-4">Uploaded Files</div>
+                <div className="space-y-2">
+                  {files.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between border border-white rounded p-3">
+                      <div>
+                        <div className="font-medium">{file.file_name}</div>
+                        <div className="text-sm text-gray-400">
+                          Revision {file.revision_number} • {formatFileSize(file.file_size)} • {new Date(file.uploaded_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDownloadFile(file.file_key, file.file_name)}
+                          className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm"
+                        >
+                          Download
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFile(file.id, file.file_key)}
+                          className="border border-red-500 text-red-500 rounded px-4 py-1 hover:bg-red-500 hover:text-white transition-colors text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Delete Job Button */}
             <div className="pt-6">

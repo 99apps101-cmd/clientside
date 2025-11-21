@@ -15,28 +15,40 @@ export default function Home() {
     client_name: string;
     client_email: string;
     client_key: string;
+    user_id: string;
   }
 
   const [clients, setClients] = useState<Clients[]>([]);
 
   const fetchSession = async () => {
     const currentSession = await supabase.auth.getSession();
-    console.log(currentSession);
+    console.log("Session data:", currentSession);
     setSession(currentSession.data.session);
     setLoading(false);
   };
 
   const fetchClients = async () => {
+    if (!session?.user?.id) {
+      console.log("No user ID found");
+      return;
+    }
+
+    console.log("Fetching clients for user:", session.user.id);
+
     const { error, data } = await supabase
       .from("clients")
       .select("*")
+      .eq("user_id", session.user.id)
       .order("client_name", { ascending: true }); 
+
+    console.log("Clients data:", data);
+    console.log("Clients error:", error);
 
     if (error) {
       console.error("Error reading Clients: ", error.message);
       return;
     }
-    setClients(data);
+    setClients(data || []);
   };
 
   useEffect(() => {
@@ -44,6 +56,7 @@ export default function Home() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("Auth state changed:", _event);
         setSession(session);
       }
     );
@@ -55,16 +68,10 @@ export default function Home() {
 
   useEffect(() => {
     if (session) {
-      // Check if this is a client user and redirect them
-      const isClient = session.user?.user_metadata?.user_type === 'client';
-      if (isClient) {
-        router.push('/client_jobs');
-        return;
-      }
-      // Only fetch clients for regular users
+      console.log("Session exists, fetching clients...");
       fetchClients();
     }
-  }, [session, router]);
+  }, [session]);
 
   const handleCreateClient = () => {
     router.push("/create_client");
@@ -90,9 +97,8 @@ export default function Home() {
     return <Auth />;
   }
 
-  // If we get here, it's a regular user (not a client)
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-8">
       {/* Header with User Info */}
       <div className="border border-white p-6 mb-8">
         <div className="flex items-center justify-between">
@@ -122,7 +128,7 @@ export default function Home() {
       <div className="flex justify-center mb-12">
         <button 
           onClick={handleCreateClient}
-          className="border border-white px-16 py-4 text-lg hover:bg-white hover:text-black transition-colors"
+          className="rounded border border-blue-200/25 bg-blue-200/25 px-16 py-4 text-lg hover:bg-blue-200 hover:border-blue-200 hover:text-black transition-colors"
         >
           Create Client
         </button>
@@ -131,22 +137,22 @@ export default function Home() {
       {/* Client List Table */}
       <div className="border border-white">
         {/* Table Header */}
-        <div className="bg-black border-b border-white p-4 text-center text-2xl font-medium">
+        <div className="border-b bg-blue-200/50 border-white p-4 text-center text-2xl font-medium">
           Client List
         </div>
 
         {/* Column Headers */}
         <div className="grid grid-cols-4 border-b border-white">
-          <div className="border-r border-white p-4 text-center text-lg font-medium">
+          <div className="border-r bg-blue-200/25 border-white p-4 text-center text-lg font-medium">
             Client
           </div>
-          <div className="border-r border-white p-4 text-center text-lg font-medium">
+          <div className="border-r bg-blue-200/25 border-white p-4 text-center text-lg font-medium">
             Email
           </div>
-          <div className="border-r border-white p-4 text-center text-lg font-medium">
+          <div className="border-r bg-blue-200/25 border-white p-4 text-center text-lg font-medium">
             Status (# completed of #)
           </div>
-          <div className="p-4 text-center text-lg font-medium">
+          <div className="p-4 bg-blue-200/25 text-center text-lg font-medium">
             Manage Button
           </div>
         </div>
@@ -169,11 +175,12 @@ export default function Home() {
                 {client.client_email}
               </div>
               <div className="border-r border-white p-6 text-center">
-                0 of 0              </div>
+                0 of 0
+              </div>
               <div className="p-6 flex justify-center items-center">
                 <button 
                   onClick={() => handleManageClient(client.id)}
-                  className="border border-white px-8 py-2 hover:bg-white hover:text-black transition-colors"
+                  className="border border-blue-200/25 bg-blue-200/25 px-8 py-2 hover:bg-blue-200 hover:border-blue-200 hover:text-black transition-colors rounded"
                 >
                   Manage
                 </button>

@@ -117,8 +117,8 @@ export default function CreateJob() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-8">
-      <div className="border border-white p-16 w-full max-w-3xl">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-centerflex items-center justify-center p-8">
+      
         <div className="space-y-6">
           {/* Error Message */}
           {error && (
@@ -126,8 +126,12 @@ export default function CreateJob() {
               {error}
             </div>
           )}
-
+          
+        <div className='grid grid-cols-1 justify-items-center justify-center border m-5'>
           <div>
+            <h1 className='text-center justify-center  text-xl h-fit mb-4 text-mono rounded'>
+              Create Job
+            </h1>
             <input
               type="text"
               name="job_name"
@@ -139,8 +143,8 @@ export default function CreateJob() {
                 }));
                 if (error) setError("");
               }}
-              placeholder="Job name"
-              className="w-full bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
+              placeholder="Enter Job Name"
+              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
             />
           </div>
 
@@ -156,8 +160,8 @@ export default function CreateJob() {
                 }));
                 if (error) setError("");
               }}
-              placeholder="Price"
-              className="w-full bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
+              placeholder="Enter Job Price"
+              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
             />
           </div>
 
@@ -173,8 +177,8 @@ export default function CreateJob() {
                 }));
                 if (error) setError("");
               }}
-              placeholder="Revision #"
-              className="w-full bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
+              placeholder="Allowed Revisions #"
+              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
             />
           </div>
 
@@ -189,9 +193,9 @@ export default function CreateJob() {
                 }));
                 if (error) setError("");
               }}
-              placeholder="Description of job"
+              placeholder="Description of Job"
               rows={6}
-              className="w-full bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white resize-none"
+              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white resize-none"
             />
           </div>
 
@@ -211,9 +215,10 @@ export default function CreateJob() {
             >
               Back
             </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+   
   );
 }

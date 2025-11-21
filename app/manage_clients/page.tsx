@@ -192,10 +192,10 @@ export default function ManageClient() {
 
   //HTML//
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="border border-white p-8 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-8">
+      <div className="">
         {/* Header with User Info and Logout */}
-        <div className="border border-white rounded-lg p-4 mb-6 flex items-center justify-between">
+        <div className="border-5 border-blue-200/25 rounded-lg p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
               Pic
@@ -204,15 +204,15 @@ export default function ManageClient() {
           </div>
           <button 
             onClick={handleLogout}
-            className="border border-white rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
+            className="border border-blue-200/25 rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
           >
             Logout
           </button>
         </div>
 
-        {/* Client Name Header */}
-        <div className="border border-white rounded-lg p-6 text-center text-2xl mb-6">
-          {client.client_name}
+        {/* User Name Header */}
+        <div className="border-2 w-fit h-fit border-blue-200/25 rounded-lg p-6 text-left text-2xl mb-6  ">
+          Client Name - {client.client_name}
         </div>
 
         {/* Display Key and Create Job Buttons */}
@@ -247,7 +247,7 @@ export default function ManageClient() {
         {/* Job List Table */}
         <div className="border border-white">
           {/* Table Header */}
-          <div className="bg-black border-b border-white p-4 text-center text-xl font-medium">
+          <div className=" border-b border-white p-4 text-center text-xl font-medium">
             Job List
           </div>
 

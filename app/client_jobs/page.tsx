@@ -1,11 +1,20 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../supabase-client';
 
 export default function ClientJobs() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlClientKey = searchParams.get('client_key');
+
+  interface Client {
+    id: number;
+    client_name: string;
+    client_email: string;
+    client_key: string;
+  }
 
   interface Job {
     job_id: number;
@@ -15,46 +24,66 @@ export default function ClientJobs() {
     description: string;
   }
 
-  const [clientName, setClientName] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [clientKey, setClientKey] = useState('');
+  const [client, setClient] = useState<Client | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthAndFetchJobs();
+    fetchClientAndJobs();
   }, []);
 
-  const checkAuthAndFetchJobs = async () => {
+  const fetchClientAndJobs = async () => {
     try {
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      console.log("=== CLIENT JOBS PAGE ===");
+      console.log("URL client_key:", urlClientKey);
+      
+      // Try to get client data from session storage OR URL
+      let clientData;
+      const storedClient = sessionStorage.getItem('client_data');
+      console.log("Stored client data:", storedClient);
+      
+      if (storedClient) {
+        clientData = JSON.parse(storedClient);
+        console.log("Using stored client:", clientData);
+      } else if (urlClientKey) {
+        console.log("No stored client, fetching with URL key...");
+        // If we have client_key in URL but not in session, fetch it
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('client_key', urlClientKey)
+          .single();
+        
+        console.log("Fetch result:", data, error);
+        
+        if (error || !data) {
+          console.error("Client not found");
+          router.push('/');
+          return;
+        }
+        
+        clientData = data;
+        // Store for future use
+        sessionStorage.setItem('client_data', JSON.stringify(clientData));
+      } else {
+        console.error("No client key in URL or storage");
         router.push('/');
         return;
       }
 
-      // Get client info from user metadata
-      const userClientKey = user.user_metadata?.client_key;
-      setClientName(user.user_metadata?.client_name || 'Client');
-      setClientEmail(user.email || '');
-      setClientKey(userClientKey);
+      setClient(clientData);
 
-      if (!userClientKey) {
-        router.push('/');
-        return;
-      }
+      console.log("Fetching jobs for client_key:", clientData.client_key);
 
-      // Fetch jobs - RLS will automatically filter by client_key
+      // Fetch jobs for this client
       const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
         .select('*')
-        .eq('client_key', userClientKey)
+        .eq('client_key', clientData.client_key)
         .order('created_at', { ascending: false });
 
-      console.log('Jobs data:', jobsData);
-      console.log('Jobs error:', jobsError);
+      console.log("Jobs data:", jobsData);
+      console.log("Jobs error:", jobsError);
 
       if (jobsError) {
         console.error('Error fetching jobs:', jobsError);
@@ -62,27 +91,35 @@ export default function ClientJobs() {
         setJobs(jobsData || []);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Unexpected error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    console.log('Logging out...');
-    await supabase.auth.signOut({ scope: 'local' });
-    console.log('Logout successful, redirecting...');
-    window.location.href = '/';
+  const handleLogout = () => {
+    console.log("Logging out...");
+    sessionStorage.removeItem('client_data');
+    router.push('/');
   };
 
   const handleViewJob = (jobId: number) => {
-    router.push(`/client_view_job/${jobId}`);
+    if (!client) return;
+    router.push(`/client_view_job/${jobId}?client_key=${client.client_key}`);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-xl">Client not found</div>
       </div>
     );
   }
@@ -94,11 +131,11 @@ export default function ClientJobs() {
         <div className="border border-white rounded-lg p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
-              {clientName?.charAt(0) || 'C'}
+              {client.client_name?.charAt(0) || 'C'}
             </div>
             <div>
-              <div className="text-lg font-medium">{clientName || 'Client'}</div>
-              <div className="text-sm text-gray-400">{clientEmail}</div>
+              <div className="text-lg font-medium">{client.client_name}</div>
+              <div className="text-sm text-gray-400">{client.client_email}</div>
             </div>
           </div>
           <button 

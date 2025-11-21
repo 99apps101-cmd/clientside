@@ -1,20 +1,24 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { supabase } from '../../supabase-client';
 
 export default function ClientViewJob() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const jobId = params.id;
+  const urlClientKey = searchParams.get('client_key');
 
   const [job, setJob] = useState<any>(null);
   const [clientName, setClientName] = useState("");
+  const [clientKey, setClientKey] = useState("");
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [files, setFiles] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuthAndFetchJob();
@@ -22,29 +26,43 @@ export default function ClientViewJob() {
 
   const checkAuthAndFetchJob = async () => {
     try {
-      // Check if user is authenticated as a client
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        router.push('/');
-        return;
-      }
-
-      const userClientKey = user.user_metadata?.client_key;
+      // Try to get client data from session storage OR URL
+      let clientData;
+      const storedClient = sessionStorage.getItem('client_data');
       
-      if (!userClientKey) {
+      if (storedClient) {
+        clientData = JSON.parse(storedClient);
+      } else if (urlClientKey) {
+        // If we have client_key in URL but not in session, verify it exists
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('client_key', urlClientKey)
+          .single();
+        
+        if (error || !data) {
+          router.push('/');
+          return;
+        }
+        
+        clientData = data;
+        // Store for future use
+        sessionStorage.setItem('client_data', JSON.stringify(clientData));
+      } else {
+        // No auth data at all
         router.push('/');
         return;
       }
 
-      setClientName(user.user_metadata?.client_name || 'Client');
+      setClientName(clientData.client_name);
+      setClientKey(clientData.client_key);
 
       // Fetch job info
       const { data: jobData, error: jobError } = await supabase
         .from("jobs")
         .select("*")
         .eq("job_id", parseInt(jobId as string))
-        .eq("client_key", userClientKey) // Ensure client can only see their own job
+        .eq("client_key", clientData.client_key)
         .single();
 
       if (jobError) {
@@ -74,6 +92,9 @@ export default function ClientViewJob() {
       } else {
         setComments(commentsData || []);
       }
+
+      // Fetch files
+      await fetchFiles();
     } catch (error) {
       console.error("Unexpected error:", error);
       setError("Unexpected error occurred");
@@ -82,8 +103,54 @@ export default function ClientViewJob() {
     }
   };
 
+  const fetchFiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("job_files")
+        .select("*")
+        .eq("job_id", parseInt(jobId as string))
+        .order("revision_number", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching files:", error);
+      } else {
+        setFiles(data || []);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleDownloadFile = async (fileKey: string, fileName: string) => {
+    try {
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get download URL');
+      }
+
+      const { downloadUrl } = await response.json();
+      
+      // Open download in new tab
+      window.open(downloadUrl, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download file');
+    }
+  };
+
+
   const handleBack = () => {
-    router.push('/client_jobs');
+    router.push(`/client_jobs?client_key=${clientKey}`);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('client_data');
+    router.push('/');
   };
 
   const handleAddComment = async () => {
@@ -108,6 +175,13 @@ export default function ClientViewJob() {
     } catch (error) {
       console.error("Error:", error);
     }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
   };
 
   if (loading) {
@@ -152,6 +226,12 @@ export default function ClientViewJob() {
               >
                 Back
               </button>
+              <button 
+                onClick={handleLogout}
+                className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
+              >
+                Logout
+              </button>
             </div>
 
             {/* Job Name */}
@@ -165,7 +245,7 @@ export default function ClientViewJob() {
                 <span className="text-gray-400">Price: </span>${job.price}
               </div>
               <div className="text-lg">
-                <span className="text-gray-400">Revision #: </span>{job.number_rev}
+                <span className="text-gray-400">Revisions Allowed: </span>{job.number_rev}
               </div>
             </div>
 
@@ -176,7 +256,34 @@ export default function ClientViewJob() {
                 {job.description}
               </div>
             </div>
-          </div>
+
+            {/* Uploaded Files List */}
+            {files.length > 0 && (
+              <div className="border border-white rounded-lg p-6">
+                <div className="text-lg font-medium mb-4">Uploaded Files</div>
+                <div className="space-y-2">
+                  {files.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between border border-white rounded p-3">
+                      <div>
+                        <div className="font-medium">{file.file_name}</div>
+                        <div className="text-sm text-gray-400">
+                          Revision {file.revision_number} • {formatFileSize(file.file_size)} • {new Date(file.uploaded_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDownloadFile(file.file_key, file.file_name)}
+                          className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm"
+                        >
+                          Download
+                        </button>
+                        
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           {/* Right Column - Comments Log */}
           <div className="col-span-1">
@@ -196,27 +303,32 @@ export default function ClientViewJob() {
                       className="border border-white rounded p-3 text-sm"
                     >
                       <div className="text-gray-400 text-xs mb-1">
-                        {comment.from_client ? 'You' : 'Admin'}
+                        {comment.from_client ? 'You' : 'Team'}
+                      </div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        {new Date(comment.created_at).toLocaleString()}
                       </div>
                       {comment.comment}
                     </div>
                   ))
                 )}
               </div>
+            </div>
+        
 
               {/* Comment Input */}
               <div className="space-y-2">
-                <input
-                  type="text"
+                <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                  placeholder="Add a comment..."
-                  className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none focus:border-white"
+                  placeholder="Add a comment or request changes..."
+                  rows={3}
+                  className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none focus:border-white resize-none"
                 />
                 <button
                   onClick={handleAddComment}
-                  className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors"
+                  disabled={!newComment.trim()}
+                  className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add Comment
                 </button>

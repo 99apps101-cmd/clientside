@@ -84,8 +84,10 @@ export default function CreateClient() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-8">
-      <div className="border border-white p-16 w-full max-w-2xl">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center flex items-center justify-center p-8">
+      <div className="grid row-2"><h1
+      className="text-xl text-mono text-white text-center">Create Client</h1>
+      <div className="p-16 w-full max-w-2xl">
         <div className="space-y-6">
           {/* Error Message */}
           {error && (
@@ -146,6 +148,7 @@ export default function CreateClient() {
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
