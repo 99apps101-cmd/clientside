@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.84.0",
+    "aws-sdk": "^2.1692.0",
     "client-s3": "github:aws-sdk/client-s3",
     "next": "16.0.3",
     "postcss": "^8.5.6",
