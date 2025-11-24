@@ -209,67 +209,69 @@ function ManageClientContent() {
 
   //HTML//
   return (
-    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-8">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-4 md:p-8">
       <div className="">
         {/* Header with User Info and Logout */}
-        <div className="border-5 border-blue-200/25 rounded-lg p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
+        <div className="border-5 border-blue-200/25 rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto justify-center md:justify-start">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
               Pic
             </div>
-            <div className="text-sm">{userEmail || 'User'}</div>
+            <div className="text-xs md:text-sm truncate">{userEmail || 'User'}</div>
           </div>
           <button 
             onClick={handleLogout}
-            className="border border-blue-200/25 rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
+            className="w-full md:w-auto border border-blue-200/25 rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
           >
             Logout
           </button>
         </div>
 
         {/* User Name Header */}
-        <div className="border-2 w-fit h-fit border-blue-200/25 rounded-lg p-6 text-left text-2xl mb-6  ">
-          Client Name - {client.client_name}
+        <div className="border-2 w-full md:w-fit border-blue-200/25 rounded-lg p-4 md:p-6 text-center md:text-left text-lg md:text-2xl mb-4 md:mb-6">
+          <span className="hidden md:inline">Client Name - </span>
+          <span className="md:hidden block text-sm text-gray-400 mb-1">Client</span>
+          {client.client_name}
         </div>
 
         {/* Display Key and Create Job Buttons */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
           <button 
             onClick={() => setShowKey(!showKey)}
-            className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
+            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base truncate"
           >
             {showKey ? client.client_key : 'Display Key'}
           </button>
           <button 
             onClick={handleCreateJob}
-            className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
+            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base"
           >
             Create Job
           </button>
           <button 
             onClick={handleBack}
-            className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
+            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base"
           >
             Back
           </button>
           <button 
             onClick={handleDeleteClient}
             disabled={deleting}
-            className="border border-red-500 text-red-500 rounded-lg px-8 py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+            className="border border-red-500 text-red-500 rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed md:ml-auto text-sm md:text-base"
           >
             {deleting ? "Deleting..." : "Delete Client"}
           </button>
         </div>
 
         {/* Job List Table */}
-        <div className="border border-white">
+        <div className="border border-white overflow-hidden">
           {/* Table Header */}
-          <div className=" border-b border-white p-4 text-center text-xl font-medium">
+          <div className="border-b border-white p-3 md:p-4 text-center text-lg md:text-xl font-medium">
             Job List
           </div>
 
-          {/* Column Headers */}
-          <div className="grid grid-cols-3 border-b border-white">
+          {/* Column Headers - Hidden on mobile */}
+          <div className="hidden md:grid grid-cols-3 border-b border-white">
             <div className="border-r border-white p-4 text-center font-medium">
               Job name
             </div>
@@ -283,22 +285,43 @@ function ManageClientContent() {
 
           {/* Table Rows */}
           {jobs.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-6 md:p-8 text-center text-gray-400 text-sm md:text-base">
               No jobs yet. Create one to get started!
             </div>
           ) : (
             jobs.map((job, index) => (
               <div 
                 key={job.job_id} 
-                className={`grid grid-cols-3 ${index !== jobs.length - 1 ? 'border-b border-white' : ''}`}
+                className={`grid grid-cols-1 md:grid-cols-3 ${index !== jobs.length - 1 ? 'border-b border-white' : ''}`}
               >
-                <div className="border-r border-white p-6 text-center">
+                {/* Mobile Layout */}
+                <div className="md:hidden p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Job Name</div>
+                      <div className="font-medium">{job.job_name}</div>
+                    </div>
+                    <button 
+                      onClick={() => handleManageJob(job.job_id)}
+                      className="border border-white px-4 py-1.5 text-sm hover:bg-white hover:text-black transition-colors rounded ml-2"
+                    >
+                      Manage
+                    </button>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Status</div>
+                    <div className="text-sm">{job.number_rev} revisions • ${job.price}</div>
+                  </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden md:block border-r border-white p-6 text-center">
                   {job.job_name}
                 </div>
-                <div className="border-r border-white p-6 text-center">
+                <div className="hidden md:block border-r border-white p-6 text-center">
                   {job.number_rev} revisions • ${job.price}
                 </div>
-                <div className="p-6 flex justify-center items-center">
+                <div className="hidden md:flex p-6 justify-center items-center">
                   <button 
                     onClick={() => handleManageJob(job.job_id)}
                     className="border border-white px-6 py-2 hover:bg-white hover:text-black transition-colors"
