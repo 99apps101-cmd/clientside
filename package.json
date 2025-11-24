@@ -9,9 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.937.0",
+    "@aws-sdk/s3-request-presigner": "^3.937.0",
     "@supabase/supabase-js": "^2.84.0",
     "aws-sdk": "^2.1692.0",
-    "client-s3": "github:aws-sdk/client-s3",
     "next": "16.0.3",
     "postcss": "^8.5.6",
     "react": "19.2.0",
