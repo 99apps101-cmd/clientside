@@ -19,13 +19,7 @@ export default function CreateJob() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
 
-  // Fetch client key when component loads
-  useEffect(() => {
-    if (clientId) {
-      fetchClientKey();
-    }
-  }, [clientId]);
-
+  // Declare fetchClientKey before using it in useEffect
   const fetchClientKey = async () => {
     try {
       const { data: clientData, error: clientError } = await supabase
@@ -48,6 +42,23 @@ export default function CreateJob() {
       setError("Failed to fetch client data");
     }
   };
+
+  // Fetch client key when component loads
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadClientKey = async () => {
+      if (clientId && isMounted) {
+        await fetchClientKey();
+      }
+    };
+
+    loadClientKey();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clientId]);
 
   const handleSubmit = async () => {
     setError("");
@@ -117,7 +128,7 @@ export default function CreateJob() {
   };
 
   return (
-    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-centerflex items-center justify-center p-8">
+    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center flex items-center justify-center p-8">
       
         <div className="space-y-6">
           {/* Error Message */}

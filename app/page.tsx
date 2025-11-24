@@ -20,57 +20,76 @@ export default function Home() {
 
   const [clients, setClients] = useState<Clients[]>([]);
 
-  const fetchSession = async () => {
-    const currentSession = await supabase.auth.getSession();
-    console.log("Session data:", currentSession);
-    setSession(currentSession.data.session);
-    setLoading(false);
-  };
-
-  const fetchClients = async () => {
-    if (!session?.user?.id) {
-      console.log("No user ID found");
-      return;
-    }
-
-    console.log("Fetching clients for user:", session.user.id);
-
-    const { error, data } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .order("client_name", { ascending: true }); 
-
-    console.log("Clients data:", data);
-    console.log("Clients error:", error);
-
-    if (error) {
-      console.error("Error reading Clients: ", error.message);
-      return;
-    }
-    setClients(data || []);
-  };
-
+  // First useEffect for session management
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchSession = async () => {
+      const currentSession = await supabase.auth.getSession();
+      console.log("Session data:", currentSession);
+      
+      if (isMounted) {
+        setSession(currentSession.data.session);
+        setLoading(false);
+      }
+    };
+
     fetchSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         console.log("Auth state changed:", _event);
-        setSession(session);
+        if (isMounted) {
+          setSession(session);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
 
+  // Second useEffect for fetching clients when session changes
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchClients = async () => {
+      if (!session?.user?.id) {
+        console.log("No user ID found");
+        return;
+      }
+
+      console.log("Fetching clients for user:", session.user.id);
+
+      const { error, data } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("client_name", { ascending: true }); 
+
+      console.log("Clients data:", data);
+      console.log("Clients error:", error);
+
+      if (error) {
+        console.error("Error reading Clients: ", error.message);
+        return;
+      }
+      
+      if (isMounted) {
+        setClients(data || []);
+      }
+    };
+
     if (session) {
       console.log("Session exists, fetching clients...");
       fetchClients();
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [session]);
 
   const handleCreateClient = () => {

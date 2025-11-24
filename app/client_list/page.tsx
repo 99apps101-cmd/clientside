@@ -16,21 +16,33 @@ export default function ClientListDashboard() {
   const [clients, setClients] = useState<Clients[]>([]);
   const router = useRouter();
 
-  const fetchClients = async () => {
-    const { error, data } = await supabase
-      .from("clients")
-      .select("*")
-      .order("client_name", { ascending: true }); 
-
-    if (error) {
-      console.error("Error reading Clients: ", error.message);
-      return;
-    }
-    setClients(data);
-  };
-
+  // Move fetchClients outside to avoid it being recreated on every render
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchClients = async () => {
+      const { error, data } = await supabase
+        .from("clients")
+        .select("*")
+        .order("client_name", { ascending: true }); 
+
+      if (error) {
+        console.error("Error reading Clients: ", error.message);
+        return;
+      }
+      
+      // Only update state if component is still mounted
+      if (isMounted && data) {
+        setClients(data);
+      }
+    };
+
     fetchClients();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCreateClient = () => {
