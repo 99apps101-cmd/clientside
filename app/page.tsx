@@ -224,7 +224,7 @@ return (
               </div>
               <div className="hidden md:flex items-center justify-center p-6">
                 <button
-                  onClick={() => handleManageClient(c.id)}
+                  onClick={() => handleManageClient(c.id)}  
                   className="border border-blue-200/30 bg-blue-200/20 px-8 py-2 rounded hover:bg-blue-200 hover:text-black transition"
                 >
                   Manage
