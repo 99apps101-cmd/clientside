@@ -1,101 +1,111 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../supabase-client';
 
-export default function ClientJobs() {
+interface Client {
+  id: number;
+  client_name: string;
+  client_email: string;
+  client_key: string;
+}
+
+interface Job {
+  job_id: number;
+  job_name: string;
+  price: number;
+  number_rev: number;
+  description: string;
+}
+
+function ClientJobsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlClientKey = searchParams.get('client_key');
-
-  interface Client {
-    id: number;
-    client_name: string;
-    client_email: string;
-    client_key: string;
-  }
-
-  interface Job {
-    job_id: number;
-    job_name: string;
-    price: number;
-    number_rev: number;
-    description: string;
-  }
 
   const [client, setClient] = useState<Client | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchClientAndJobs();
-  }, []);
+    let isMounted = true;
 
-  const fetchClientAndJobs = async () => {
-    try {
-      console.log("=== CLIENT JOBS PAGE ===");
-      console.log("URL client_key:", urlClientKey);
-      
-      // Try to get client data from session storage OR URL
-      let clientData;
-      const storedClient = sessionStorage.getItem('client_data');
-      console.log("Stored client data:", storedClient);
-      
-      if (storedClient) {
-        clientData = JSON.parse(storedClient);
-        console.log("Using stored client:", clientData);
-      } else if (urlClientKey) {
-        console.log("No stored client, fetching with URL key...");
-        // If we have client_key in URL but not in session, fetch it
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('client_key', urlClientKey)
-          .single();
+    const fetchClientAndJobs = async () => {
+      try {
+        console.log("=== CLIENT JOBS PAGE ===");
+        console.log("URL client_key:", urlClientKey);
         
-        console.log("Fetch result:", data, error);
+        // Try to get client data from session storage OR URL
+        let clientData;
+        const storedClient = sessionStorage.getItem('client_data');
+        console.log("Stored client data:", storedClient);
         
-        if (error || !data) {
-          console.error("Client not found");
+        if (storedClient) {
+          clientData = JSON.parse(storedClient);
+          console.log("Using stored client:", clientData);
+        } else if (urlClientKey) {
+          console.log("No stored client, fetching with URL key...");
+          // If we have client_key in URL but not in session, fetch it
+          const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('client_key', urlClientKey)
+            .single();
+          
+          console.log("Fetch result:", data, error);
+          
+          if (error || !data) {
+            console.error("Client not found");
+            router.push('/');
+            return;
+          }
+          
+          clientData = data;
+          // Store for future use
+          sessionStorage.setItem('client_data', JSON.stringify(clientData));
+        } else {
+          console.error("No client key in URL or storage");
           router.push('/');
           return;
         }
-        
-        clientData = data;
-        // Store for future use
-        sessionStorage.setItem('client_data', JSON.stringify(clientData));
-      } else {
-        console.error("No client key in URL or storage");
-        router.push('/');
-        return;
+
+        if (isMounted) {
+          setClient(clientData);
+        }
+
+        console.log("Fetching jobs for client_key:", clientData.client_key);
+
+        // Fetch jobs for this client
+        const { data: jobsData, error: jobsError } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('client_key', clientData.client_key)
+          .order('created_at', { ascending: false });
+
+        console.log("Jobs data:", jobsData);
+        console.log("Jobs error:", jobsError);
+
+        if (jobsError) {
+          console.error('Error fetching jobs:', jobsError);
+        } else if (isMounted) {
+          setJobs(jobsData || []);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
+    };
 
-      setClient(clientData);
+    fetchClientAndJobs();
 
-      console.log("Fetching jobs for client_key:", clientData.client_key);
-
-      // Fetch jobs for this client
-      const { data: jobsData, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('client_key', clientData.client_key)
-        .order('created_at', { ascending: false });
-
-      console.log("Jobs data:", jobsData);
-      console.log("Jobs error:", jobsError);
-
-      if (jobsError) {
-        console.error('Error fetching jobs:', jobsError);
-      } else {
-        setJobs(jobsData || []);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [urlClientKey, router]);
 
   const handleLogout = () => {
     console.log("Logging out...");
@@ -203,5 +213,17 @@ export default function ClientJobs() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ClientJobs() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    }>
+      <ClientJobsContent />
+    </Suspense>
   );
 }
