@@ -1,28 +1,27 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from "../supabase-client";
 
-export default function ManageClient() {
-  
-  //Interfaces//
-  interface Clients {
-    id: number;
-    client_name: string;
-    client_email: string;
-    client_key: string;
-    user_id: string;
-  }
+//Interfaces//
+interface Clients {
+  id: number;
+  client_name: string;
+  client_email: string;
+  client_key: string;
+  user_id: string;
+}
 
-  interface Jobs {
-    job_id: number;
-    client_key: string;
-    job_name: string;
-    price: number;
-    number_rev: number;
-  }
+interface Jobs {
+  job_id: number;
+  client_key: string;
+  job_name: string;
+  price: number;
+  number_rev: number;
+}
 
+function ManageClientContent() {
   const [client, setClient] = useState<Clients | null>(null);
   const [jobs, setJobs] = useState<Jobs[]>([]);
   const [showKey, setShowKey] = useState(false);
@@ -34,68 +33,86 @@ export default function ManageClient() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('id');
 
-  const fetchClientAndJobs = async () => {
-    console.log("Fetching client with ID:", clientId);
-    
-    if (!clientId) {
-      console.error("No client ID provided");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/');
-        return;
-      }
-      setUserEmail(user.email || '');
-
-      // Fetch client info - ensure it belongs to the logged-in user
-      const { data: clientData, error: clientError } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("id", parseInt(clientId))
-        .eq("user_id", user.id)  // Only fetch if it belongs to this user
-        .single();
-
-      console.log("Client data:", clientData);
-      console.log("Client error:", clientError);
-
-      if (clientError) {
-        console.error("Error reading Client: ", clientError.message);
-        setLoading(false);
-        return;
-      }
-
-      setClient(clientData);
-
-      // Fetch jobs with the client's key
-      const { data: jobsData, error: jobsError } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("client_key", clientData.client_key)
-        .order("created_at", { ascending: false });
-
-      console.log("Jobs data:", jobsData);
-      console.log("Jobs error:", jobsError);
-
-      if (jobsError) {
-        console.error("Error reading Jobs: ", jobsError.message);
-      }
-
-      setJobs(jobsData || []);
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchClientAndJobs = async () => {
+      console.log("Fetching client with ID:", clientId);
+      
+      if (!clientId) {
+        console.error("No client ID provided");
+        if (isMounted) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push('/');
+          return;
+        }
+        if (isMounted) {
+          setUserEmail(user.email || '');
+        }
+
+        // Fetch client info - ensure it belongs to the logged-in user
+        const { data: clientData, error: clientError } = await supabase
+          .from("clients")
+          .select("*")
+          .eq("id", parseInt(clientId))
+          .eq("user_id", user.id)  // Only fetch if it belongs to this user
+          .single();
+
+        console.log("Client data:", clientData);
+        console.log("Client error:", clientError);
+
+        if (clientError) {
+          console.error("Error reading Client: ", clientError.message);
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setClient(clientData);
+        }
+
+        // Fetch jobs with the client's key
+        const { data: jobsData, error: jobsError } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("client_key", clientData.client_key)
+          .order("created_at", { ascending: false });
+
+        console.log("Jobs data:", jobsData);
+        console.log("Jobs error:", jobsError);
+
+        if (jobsError) {
+          console.error("Error reading Jobs: ", jobsError.message);
+        }
+
+        if (isMounted) {
+          setJobs(jobsData || []);
+        }
+      } catch (error) {
+        console.error("Unexpected error:", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchClientAndJobs();
-  }, [clientId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clientId, router]);
 
   //Change Pages//
   const handleCreateJob = () => {
@@ -295,5 +312,17 @@ export default function ManageClient() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ManageClient() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    }>
+      <ManageClientContent />
+    </Suspense>
   );
 }
