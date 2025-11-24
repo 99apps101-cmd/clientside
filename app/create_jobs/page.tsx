@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../supabase-client';
 
-export default function CreateJob() {
+function CreateJobContent() {
   const [newJob, setNewJob] = useState({
     job_name: "",
     price: "",
@@ -231,5 +231,17 @@ export default function CreateJob() {
         </div>
       </div>
    
+  );
+}
+
+export default function CreateJob() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center flex items-center justify-center p-8">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <CreateJobContent />
+    </Suspense>
   );
 }
