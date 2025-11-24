@@ -370,182 +370,196 @@ export default function ManageJob() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-8">
-      <div className="border border-white p-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-3 gap-8">
-          {/* Left Column - Job Details */}
-          <div className="col-span-2 space-y-6">
-            {/* Header */}
-            <div className="flex gap-4 mb-8">
-              <div className="border border-white rounded-lg px-6 py-3 flex-1 text-center">
-                {clientName}
-              </div>
-              <button 
-                onClick={handleBack}
-                className="border border-white rounded-lg px-12 py-3 hover:bg-white hover:text-black transition-colors"
-              >
-                Back
-              </button>
+ return (
+  <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-4 md:p-8">
+    <div className="border border-white p-4 md:p-8 max-w-6xl mx-auto rounded-xl bg-black/40 backdrop-blur-sm">
+
+      {/* -------- Header -------- */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+
+        <div className="text-center border border-white rounded-lg px-6 py-3 w-full md:w-auto">
+          {clientName}
+        </div>
+
+        <button
+          onClick={handleBack}
+          className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors w-full md:w-auto"
+        >
+          Back
+        </button>
+      </div>
+
+      {/* -------- Layout (2 columns on desktop) -------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* -------- Left Side Content (Job info + upload + files + delete) -------- */}
+        <div className="lg:col-span-2 space-y-6">
+
+          {/* Job Name */}
+          <div className="text-2xl font-semibold">{job.job_name}</div>
+
+          {/* Price + Revision */}
+          <div className="flex flex-col sm:flex-row sm:gap-8 gap-2 text-lg">
+            <div>
+              <span className="text-gray-400">Price: </span>${job.price}
             </div>
-
-            {/* Job Name */}
-            <div className="text-2xl font-medium mb-6">
-              {job.job_name}
-            </div>
-
-            {/* Price and Revision */}
-            <div className="flex gap-8 mb-6">
-              <div className="text-lg">
-                <span className="text-gray-400">Price: </span>${job.price}
-              </div>
-              <div className="text-lg">
-                <span className="text-gray-400">Revision #: </span>{job.number_rev}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-6">
-              <div className="text-gray-400 mb-2">Description</div>
-              <div className="border border-white rounded-lg p-4 min-h-[100px]">
-                {job.description}
-              </div>
-            </div>
-
-            {/* Upload File Section */}
-            <div className="border border-white rounded-lg p-6">
-              <div className="text-lg font-medium mb-4">Upload File (Revision #{revisionNumber})</div>
-              <input
-                type="file"
-                id="fileUpload"
-                className="hidden"
-                onChange={handleFileChange}
-                disabled={uploading}
-              />
-              <label htmlFor="fileUpload">
-                <div className="border border-white rounded-lg px-8 py-3 inline-block cursor-pointer hover:bg-white hover:text-black transition-colors mb-4">
-                  {file ? file.name : 'Select File'}
-                </div>
-              </label>
-
-              {file && (
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-400">
-                    Selected: {file.name} ({formatFileSize(file.size)})
-                  </div>
-                  <button
-                    onClick={handleFileUpload}
-                    disabled={uploading}
-                    className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {uploading ? `Uploading... ${uploadProgress}%` : 'Upload File'}
-                  </button>
-                </div>
-              )}
-
-              {uploading && (
-                <div className="mt-4">
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="bg-white h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Uploaded Files List */}
-            {files.length > 0 && (
-              <div className="border border-white rounded-lg p-6">
-                <div className="text-lg font-medium mb-4">Uploaded Files</div>
-                <div className="space-y-2">
-                  {files.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between border border-white rounded p-3">
-                      <div>
-                        <div className="font-medium">{file.file_name}</div>
-                        <div className="text-sm text-gray-400">
-                          Revision {file.revision_number} • {formatFileSize(file.file_size)} • {new Date(file.uploaded_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDownloadFile(file.file_key, file.file_name)}
-                          className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFile(file.id, file.file_key)}
-                          className="border border-red-500 text-red-500 rounded px-4 py-1 hover:bg-red-500 hover:text-white transition-colors text-sm"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Delete Job Button */}
-            <div className="pt-6">
-              <button
-                onClick={handleDeleteJob}
-                disabled={deleting}
-                className="border border-red-500 text-red-500 rounded-lg px-8 py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {deleting ? "Deleting..." : "Delete Job"}
-              </button>
+            <div>
+              <span className="text-gray-400">Revision #: </span>{job.number_rev}
             </div>
           </div>
 
-          {/* Right Column - Comments Log */}
-          <div className="col-span-1">
-            <div className="border border-white rounded-lg p-6 h-full flex flex-col">
-              <div className="text-center text-lg font-medium mb-4">
-                Log/Comments from Client
-              </div>
-              
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-[400px]">
-                {comments.length === 0 ? (
-                  <div className="text-gray-400 text-center">No comments yet</div>
-                ) : (
-                  comments.map((comment, index) => (
-                    <div 
-                      key={index}
-                      className="border border-white rounded p-3 text-sm"
-                    >
-                      <div className="text-gray-400 text-xs mb-1">
-                        {comment.from_client ? 'Client' : 'You'}
-                      </div>
-                      {comment.comment}
-                    </div>
-                  ))
-                )}
-              </div>
+          {/* Description */}
+          <div>
+            <div className="text-gray-400 mb-2">Description</div>
+            <div className="border border-white rounded-lg p-4 min-h-[100px]">
+              {job.description}
+            </div>
+          </div>
 
-              {/* Comment Input */}
+          {/* Upload File */}
+          <div className="border border-white rounded-lg p-6">
+            <div className="text-lg font-medium mb-4">
+              Upload File (Revision #{revisionNumber})
+            </div>
+
+            <input
+              type="file"
+              id="fileUpload"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+
+            <label htmlFor="fileUpload">
+              <div className="border border-white rounded-lg px-8 py-3 inline-block cursor-pointer hover:bg-white hover:text-black transition-colors mb-3 w-full text-center">
+                {file ? file.name : "Select File"}
+              </div>
+            </label>
+
+            {file && (
               <div className="space-y-2">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Comment input"
-                  className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none focus:border-white"
-                />
+                <div className="text-sm text-gray-400 break-all">
+                  {file.name} ({formatFileSize(file.size)})
+                </div>
+
                 <button
-                  onClick={handleAddComment}
-                  className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors"
+                  onClick={handleFileUpload}
+                  disabled={uploading}
+                  className="w-full border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Comment
+                  {uploading ? `Uploading... ${uploadProgress}%` : "Upload File"}
                 </button>
               </div>
+            )}
+
+            {uploading && (
+              <div className="mt-4">
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-white h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Files List */}
+          {files.length > 0 && (
+            <div className="border border-white rounded-lg p-6">
+              <div className="text-lg font-medium mb-4">Uploaded Files</div>
+
+              <div className="space-y-3">
+                {files.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between border border-white rounded p-3 gap-3"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium break-all">{file.file_name}</div>
+                      <div className="text-sm text-gray-400">
+                        Revision {file.revision_number} • {formatFileSize(file.file_size)}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDownloadFile(file.file_key, file.file_name)}
+                        className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm w-full sm:w-auto"
+                      >
+                        Download
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteFile(file.id, file.file_key)}
+                        className="border border-red-500 text-red-500 rounded px-4 py-1 hover:bg-red-500 hover:text-white transition-colors text-sm w-full sm:w-auto"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Delete Job */}
+          <button
+            onClick={handleDeleteJob}
+            disabled={deleting}
+            className="w-full border border-red-500 text-red-500 rounded-lg px-8 py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {deleting ? "Deleting..." : "Delete Job"}
+          </button>
+        </div>
+
+        {/* -------- Right Side Comments -------- */}
+        <div>
+          <div className="border border-white rounded-lg p-6 flex flex-col h-full">
+            <div className="text-center text-lg font-medium mb-4">
+              Log / Comments from Client
+            </div>
+
+            {/* Comments list */}
+            <div className="flex-1 overflow-y-auto max-h-[350px] space-y-3">
+              {comments.length === 0 ? (
+                <div className="text-gray-400 text-center">No comments yet</div>
+              ) : (
+                comments.map((comment, index) => (
+                  <div
+                    key={index}
+                    className="border border-white rounded p-3 text-sm"
+                  >
+                    <div className="text-gray-400 text-xs mb-1">
+                      {comment.from_client ? "Client" : "You"}
+                    </div>
+                    <div className="wrap-break-words">{comment.comment}</div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add Comment */}
+            <div className="pt-4 space-y-2">
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Comment input"
+                className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none"
+              />
+
+              <button
+                onClick={handleAddComment}
+                className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors"
+              >
+                Add Comment
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
