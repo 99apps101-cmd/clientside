@@ -371,54 +371,48 @@ export default function ManageJob() {
   }
 
  return (
-  <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-4 md:p-8">
-    <div className="border border-white p-4 md:p-8 max-w-6xl mx-auto rounded-xl bg-black/40 backdrop-blur-sm">
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white px-4 py-6 sm:px-6 sm:py-8">
+    <div className="max-w-6xl mx-auto">
 
       {/* -------- Header -------- */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-
-        <div className="text-center border border-white rounded-lg px-6 py-3 w-full md:w-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div className="text-center sm:text-left border border-white/30 rounded-lg px-4 py-2 sm:px-6 sm:py-3 bg-white/5 backdrop-blur">
           {clientName}
         </div>
-
         <button
           onClick={handleBack}
-          className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors w-full md:w-auto"
+          className="w-full sm:w-auto border border-white/30 rounded-lg px-6 py-3 bg-white/5 backdrop-blur hover:bg-white/20 transition"
         >
           Back
         </button>
-      </div>
+      </header>
 
-      {/* -------- Layout (2 columns on desktop) -------- */}
+      {/* -------- 2-col layout: main / comments -------- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* -------- Left Side Content (Job info + upload + files + delete) -------- */}
+        {/* -------- Left: Job info / upload / files / delete -------- */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Job Name */}
-          <div className="text-2xl font-semibold">{job.job_name}</div>
+          {/* Job title */}
+          <h2 className="text-xl sm:text-2xl font-semibold break-words">{job.job_name}</h2>
 
-          {/* Price + Revision */}
-          <div className="flex flex-col sm:flex-row sm:gap-8 gap-2 text-lg">
-            <div>
-              <span className="text-gray-400">Price: </span>${job.price}
-            </div>
-            <div>
-              <span className="text-gray-400">Revision #: </span>{job.number_rev}
-            </div>
+          {/* Price & Revision */}
+          <div className="flex flex-col xs:flex-row gap-2 xs:gap-6 text-sm sm:text-base">
+            <div><span className="text-white/60">Price:</span> ${job.price}</div>
+            <div><span className="text-white/60">Revision #:</span> {job.number_rev}</div>
           </div>
 
           {/* Description */}
           <div>
-            <div className="text-gray-400 mb-2">Description</div>
-            <div className="border border-white rounded-lg p-4 min-h-[100px]">
+            <div className="text-white/60 mb-2">Description</div>
+            <div className="border border-white/30 rounded-lg p-4 bg-white/5 backdrop-blur break-words">
               {job.description}
             </div>
           </div>
 
-          {/* Upload File */}
-          <div className="border border-white rounded-lg p-6">
-            <div className="text-lg font-medium mb-4">
+          {/* Upload card */}
+          <div className="border border-white/30 rounded-lg p-4 sm:p-6 bg-white/5 backdrop-blur">
+            <div className="text-base sm:text-lg font-medium mb-4">
               Upload File (Revision #{revisionNumber})
             </div>
 
@@ -429,34 +423,32 @@ export default function ManageJob() {
               onChange={handleFileChange}
               disabled={uploading}
             />
-
             <label htmlFor="fileUpload">
-              <div className="border border-white rounded-lg px-8 py-3 inline-block cursor-pointer hover:bg-white hover:text-black transition-colors mb-3 w-full text-center">
+              <div className="w-full border border-white/30 rounded-lg px-6 py-3 text-center cursor-pointer hover:bg-white/20 transition">
                 {file ? file.name : "Select File"}
               </div>
             </label>
 
             {file && (
-              <div className="space-y-2">
-                <div className="text-sm text-gray-400 break-all">
+              <div className="mt-4 space-y-3">
+                <div className="text-sm text-white/60 break-all">
                   {file.name} ({formatFileSize(file.size)})
                 </div>
-
                 <button
                   onClick={handleFileUpload}
                   disabled={uploading}
-                  className="w-full border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full border border-white/30 rounded-lg px-6 py-3 hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? `Uploading... ${uploadProgress}%` : "Upload File"}
+                  {uploading ? `Uploading… ${uploadProgress}%` : "Upload File"}
                 </button>
               </div>
             )}
 
             {uploading && (
               <div className="mt-4">
-                <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-white/20 rounded-full h-2">
                   <div
-                    className="bg-white h-2 rounded-full transition-all duration-300"
+                    className="bg-white h-2 rounded-full transition-all"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -464,35 +456,32 @@ export default function ManageJob() {
             )}
           </div>
 
-          {/* Files List */}
+          {/* Files list */}
           {files.length > 0 && (
-            <div className="border border-white rounded-lg p-6">
-              <div className="text-lg font-medium mb-4">Uploaded Files</div>
-
+            <div className="border border-white/30 rounded-lg p-4 sm:p-6 bg-white/5 backdrop-blur">
+              <div className="text-base sm:text-lg font-medium mb-4">Uploaded Files</div>
               <div className="space-y-3">
-                {files.map((file) => (
+                {files.map((f) => (
                   <div
-                    key={file.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between border border-white rounded p-3 gap-3"
+                    key={f.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/30 rounded p-3 bg-white/10"
                   >
-                    <div className="flex-1">
-                      <div className="font-medium break-all">{file.file_name}</div>
-                      <div className="text-sm text-gray-400">
-                        Revision {file.revision_number} • {formatFileSize(file.file_size)}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium break-all">{f.file_name}</div>
+                      <div className="text-sm text-white/60">
+                        Revision {f.revision_number} • {formatFileSize(f.file_size)}
                       </div>
                     </div>
-
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleDownloadFile(file.file_key, file.file_name)}
-                        className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm w-full sm:w-auto"
+                        onClick={() => handleDownloadFile(f.file_key, f.file_name)}
+                        className="flex-1 sm:flex-none border border-white/30 rounded px-4 py-2 hover:bg-white/20 transition text-sm"
                       >
                         Download
                       </button>
-
                       <button
-                        onClick={() => handleDeleteFile(file.id, file.file_key)}
-                        className="border border-red-500 text-red-500 rounded px-4 py-1 hover:bg-red-500 hover:text-white transition-colors text-sm w-full sm:w-auto"
+                        onClick={() => handleDeleteFile(f.id, f.file_key)}
+                        className="flex-1 sm:flex-none border border-red-400 text-red-400 rounded px-4 py-2 hover:bg-red-400 hover:text-white transition text-sm"
                       >
                         Delete
                       </button>
@@ -503,59 +492,47 @@ export default function ManageJob() {
             </div>
           )}
 
-          {/* Delete Job */}
+          {/* Delete job */}
           <button
             onClick={handleDeleteJob}
             disabled={deleting}
-            className="w-full border border-red-500 text-red-500 rounded-lg px-8 py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full border border-red-400 text-red-400 rounded-lg px-6 py-3 hover:bg-red-400 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {deleting ? "Deleting..." : "Delete Job"}
+            {deleting ? "Deleting…" : "Delete Job"}
           </button>
         </div>
 
-        {/* -------- Right Side Comments -------- */}
-        <div>
-          <div className="border border-white rounded-lg p-6 flex flex-col h-full">
-            <div className="text-center text-lg font-medium mb-4">
-              Log / Comments from Client
-            </div>
+        {/* -------- Right: Comments -------- */}
+        <div className="border border-white/30 rounded-lg p-4 sm:p-6 bg-white/5 backdrop-blur flex flex-col h-full">
+          <div className="text-center text-base sm:text-lg font-medium mb-4">Log / Comments from Client</div>
 
-            {/* Comments list */}
-            <div className="flex-1 overflow-y-auto max-h-[350px] space-y-3">
-              {comments.length === 0 ? (
-                <div className="text-gray-400 text-center">No comments yet</div>
-              ) : (
-                comments.map((comment, index) => (
-                  <div
-                    key={index}
-                    className="border border-white rounded p-3 text-sm"
-                  >
-                    <div className="text-gray-400 text-xs mb-1">
-                      {comment.from_client ? "Client" : "You"}
-                    </div>
-                    <div className="wrap-break-words">{comment.comment}</div>
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="flex-1 overflow-y-auto max-h-[350px] space-y-3 pr-2">
+            {comments.length === 0 ? (
+              <div className="text-white/60 text-sm text-center">No comments yet</div>
+            ) : (
+              comments.map((c, i) => (
+                <div key={i} className="border border-white/30 rounded p-3 text-sm bg-white/10">
+                  <div className="text-white/60 text-xs mb-1">{c.from_client ? "Client" : "You"}</div>
+                  <div className="break-words">{c.comment}</div>
+                </div>
+              ))
+            )}
+          </div>
 
-            {/* Add Comment */}
-            <div className="pt-4 space-y-2">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Comment input"
-                className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none"
-              />
-
-              <button
-                onClick={handleAddComment}
-                className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors"
-              >
-                Add Comment
-              </button>
-            </div>
+          <div className="pt-4 space-y-3">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment…"
+              className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              onClick={handleAddComment}
+              className="w-full border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition"
+            >
+              Add Comment
+            </button>
           </div>
         </div>
       </div>

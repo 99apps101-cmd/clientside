@@ -210,133 +210,127 @@ export default function ClientViewJob() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="border border-white p-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-3 gap-8">
-          {/* Left Column - Job Details */}
-          <div className="col-span-2 space-y-6">
-            {/* Header */}
-            <div className="flex gap-4 mb-8">
-              <div className="border border-white rounded-lg px-6 py-3 flex-1 text-center">
-                {clientName}
-              </div>
-              <button 
-                onClick={handleBack}
-                className="border border-white rounded-lg px-12 py-3 hover:bg-white hover:text-black transition-colors"
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white px-4 py-6 sm:px-6 sm:py-8">
+    <div className="max-w-5xl mx-auto space-y-6">
+
+      {/* Logo + Service Name */}
+      <div className="flex flex-col items-center mb-6">
+        <img
+          src="/logo.svg"   
+          alt="Client Side logo"
+          className="h-16 sm:h-20 w-auto mb-3"
+        />
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Client Side</h1>
+      </div>
+
+      {/* Header card */}
+      <div className="border border-white/30 rounded-2xl p-4 sm:p-6 bg-white/5 backdrop-blur flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center font-semibold text-sm sm:text-base">
+            {clientName.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-base sm:text-lg font-medium truncate">{clientName}</div>
+            <div className="text-sm text-white/60 break-all">{job?.client_email}</div>
+          </div>
+        </div>
+        <div className="flex gap-2 sm:gap-3">
+          <button
+            onClick={handleBack}
+            className="flex-1 sm:flex-none border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition text-sm"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex-1 sm:flex-none border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition text-sm"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Job card */}
+      <div className="border border-white/30 rounded-2xl p-5 sm:p-6 bg-white/5 backdrop-blur space-y-5">
+        <h2 className="text-xl sm:text-2xl font-semibold break-words">{job?.job_name}</h2>
+
+        <div className="flex flex-col xs:flex-row gap-3 xs:gap-6 text-sm sm:text-base">
+          <div><span className="text-white/60">Price:</span> ${job?.price}</div>
+          <div><span className="text-white/60">Revisions Allowed:</span> {job?.number_rev}</div>
+        </div>
+
+        <div>
+          <div className="text-white/60 mb-2">Description</div>
+          <div className="border border-white/30 rounded-lg p-4 bg-black/20 break-words">{job?.description}</div>
+        </div>
+      </div>
+
+      {/* Files */}
+      {files.length > 0 && (
+        <div className="border border-white/30 rounded-2xl p-5 sm:p-6 bg-white/5 backdrop-blur">
+          <h3 className="text-lg sm:text-xl font-medium mb-4">Uploaded Files</h3>
+          <div className="space-y-3">
+            {files.map((file) => (
+              <div
+                key={file.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/30 rounded-lg p-4 bg-white/10"
               >
-                Back
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-
-            {/* Job Name */}
-            <div className="text-2xl font-medium mb-6">
-              {job.job_name}
-            </div>
-
-            {/* Price and Revision */}
-            <div className="flex gap-8 mb-6">
-              <div className="text-lg">
-                <span className="text-gray-400">Price: </span>${job.price}
-              </div>
-              <div className="text-lg">
-                <span className="text-gray-400">Revisions Allowed: </span>{job.number_rev}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-6">
-              <div className="text-gray-400 mb-2">Description</div>
-              <div className="border border-white rounded-lg p-4 min-h-[100px]">
-                {job.description}
-              </div>
-            </div>
-
-            {/* Uploaded Files List */}
-            {files.length > 0 && (
-              <div className="border border-white rounded-lg p-6">
-                <div className="text-lg font-medium mb-4">Uploaded Files</div>
-                <div className="space-y-2">
-                  {files.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between border border-white rounded p-3">
-                      <div>
-                        <div className="font-medium">{file.file_name}</div>
-                        <div className="text-sm text-gray-400">
-                          Revision {file.revision_number} • {formatFileSize(file.file_size)} • {new Date(file.uploaded_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDownloadFile(file.file_key, file.file_name)}
-                          className="border border-white rounded px-4 py-1 hover:bg-white hover:text-black transition-colors text-sm"
-                        >
-                          Download
-                        </button>
-                        
-                      </div>
-                    </div>
-                  ))}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium break-all">{file.file_name}</div>
+                  <div className="text-sm text-white/60">
+                    Revision {file.revision_number} · {formatFileSize(file.file_size)} · {new Date(file.uploaded_at).toLocaleDateString()}
+                  </div>
                 </div>
-              </div>
-            )}
-
-          {/* Right Column - Comments Log */}
-          <div className="col-span-1">
-            <div className="border border-white rounded-lg p-6 h-full flex flex-col">
-              <div className="text-center text-lg font-medium mb-4">
-                Comments
-              </div>
-              
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-[400px]">
-                {comments.length === 0 ? (
-                  <div className="text-gray-400 text-center">No comments yet</div>
-                ) : (
-                  comments.map((comment, index) => (
-                    <div 
-                      key={index}
-                      className="border border-white rounded p-3 text-sm"
-                    >
-                      <div className="text-gray-400 text-xs mb-1">
-                        {comment.from_client ? 'You' : 'Team'}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-1">
-                        {new Date(comment.created_at).toLocaleString()}
-                      </div>
-                      {comment.comment}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-        
-
-              {/* Comment Input */}
-              <div className="space-y-2">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment or request changes..."
-                  rows={3}
-                  className="w-full bg-black border border-white rounded-lg px-4 py-3 focus:outline-none focus:border-white resize-none"
-                />
                 <button
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim()}
-                  className="w-full border border-white rounded-lg px-4 py-2 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handleDownloadFile(file.file_key, file.file_name)}
+                  className="w-full sm:w-auto border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition text-sm"
                 >
-                  Add Comment
+                  Download
                 </button>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
+      )}
+
+      {/* Comments */}
+      <div className="border border-white/30 rounded-2xl p-5 sm:p-6 bg-white/5 backdrop-blur space-y-4">
+        <h3 className="text-lg sm:text-xl font-medium text-center">Comments</h3>
+
+        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+          {comments.length === 0 ? (
+            <div className="text-white/60 text-sm text-center">No comments yet</div>
+          ) : (
+            comments.map((c) => (
+              <div key={c.id} className="border border-white/30 rounded-lg p-3 bg-white/10 text-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-white/60 text-xs">{c.from_client ? 'You' : 'Team'}</span>
+                  <span className="text-white/60 text-xs">{new Date(c.created_at).toLocaleString()}</span>
+                </div>
+                <div className="break-words">{c.comment}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment or request changes…"
+            rows={3}
+            className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          />
+          <button
+            onClick={handleAddComment}
+            disabled={!newComment.trim()}
+            className="w-full border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add Comment
+          </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

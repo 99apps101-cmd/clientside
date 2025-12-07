@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from "../supabase-client";
 
-//Interfaces//
+/* ----------  TYPES  ---------- */
 interface Clients {
   id: number;
   client_name: string;
@@ -21,6 +21,7 @@ interface Jobs {
   number_rev: number;
 }
 
+/* ----------  CONTENT  ---------- */
 function ManageClientContent() {
   const [client, setClient] = useState<Clients | null>(null);
   const [jobs, setJobs] = useState<Jobs[]>([]);
@@ -28,323 +29,160 @@ function ManageClientContent() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get('id');
 
+  /* fetch client + jobs */
   useEffect(() => {
     let isMounted = true;
-
     const fetchClientAndJobs = async () => {
-      console.log("Fetching client with ID:", clientId);
-      
-      if (!clientId) {
-        console.error("No client ID provided");
-        if (isMounted) {
-          setLoading(false);
-        }
+      if (!clientId) { if (isMounted) setLoading(false); return; }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/'); return; }
+      if (isMounted) setUserEmail(user.email || '');
+
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', parseInt(clientId))
+        .eq('user_id', user.id)
+        .single();
+
+      if (clientError || !clientData) {
+        if (isMounted) setLoading(false);
         return;
       }
+      if (isMounted) setClient(clientData);
 
-      try {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/');
-          return;
-        }
-        if (isMounted) {
-          setUserEmail(user.email || '');
-        }
+      const { data: jobsData } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('client_key', clientData.client_key)
+        .order('created_at', { ascending: false });
 
-        // Fetch client info - ensure it belongs to the logged-in user
-        const { data: clientData, error: clientError } = await supabase
-          .from("clients")
-          .select("*")
-          .eq("id", parseInt(clientId))
-          .eq("user_id", user.id)  // Only fetch if it belongs to this user
-          .single();
-
-        console.log("Client data:", clientData);
-        console.log("Client error:", clientError);
-
-        if (clientError) {
-          console.error("Error reading Client: ", clientError.message);
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (isMounted) {
-          setClient(clientData);
-        }
-
-        // Fetch jobs with the client's key
-        const { data: jobsData, error: jobsError } = await supabase
-          .from("jobs")
-          .select("*")
-          .eq("client_key", clientData.client_key)
-          .order("created_at", { ascending: false });
-
-        console.log("Jobs data:", jobsData);
-        console.log("Jobs error:", jobsError);
-
-        if (jobsError) {
-          console.error("Error reading Jobs: ", jobsError.message);
-        }
-
-        if (isMounted) {
-          setJobs(jobsData || []);
-        }
-      } catch (error) {
-        console.error("Unexpected error:", error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+      if (isMounted) setJobs(jobsData || []);
+      if (isMounted) setLoading(false);
     };
 
     fetchClientAndJobs();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [clientId, router]);
 
-  //Change Pages//
-  const handleCreateJob = () => {
-    router.push(`/create_jobs?client_id=${clientId}`);
-  };
-
-  const handleManageJob = (jobId: number) => {
-    router.push(`/manage_jobs/${jobId}`);
-  };
-
-  const handleBack = () => {
-    router.push('/');
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
+  /* handlers */
+  const handleCreateJob = () => router.push(`/create_jobs?client_id=${clientId}`);
+  const handleManageJob = (jobId: number) => router.push(`/manage_jobs/${jobId}`);
+  const handleBack = () => router.push('/');
+  const handleLogout = async () => { await supabase.auth.signOut(); router.push('/'); };
   const handleDeleteClient = async () => {
     if (!client) return;
-
-    const confirmDelete = confirm(
-      `Are you sure you want to delete "${client.client_name}"? This will also delete all associated jobs and comments. This action cannot be undone.`
-    );
-    
-    if (!confirmDelete) return;
-
+    if (!confirm(`Delete “${client.client_name}” and all its jobs? This cannot be undone.`)) return;
     setDeleting(true);
-
-    try {
-      // Delete all jobs associated with this client (comments will cascade if ON DELETE CASCADE is set)
-      const { error: jobsError } = await supabase
-        .from("jobs")
-        .delete()
-        .eq("client_key", client.client_key);
-
-      if (jobsError) {
-        console.error("Error deleting jobs:", jobsError.message);
-        alert(`Error deleting jobs: ${jobsError.message}`);
-        setDeleting(false);
-        return;
-      }
-
-      // Delete the client
-      const { error: clientError } = await supabase
-        .from("clients")
-        .delete()
-        .eq("id", clientId);
-
-      if (clientError) {
-        console.error("Error deleting client:", clientError.message);
-        alert(`Error deleting client: ${clientError.message}`);
-        setDeleting(false);
-        return;
-      }
-
-      // Success - navigate back to home page
-      router.push('/');
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      alert("An unexpected error occurred while deleting");
-      setDeleting(false);
-    }
+    await supabase.from('jobs').delete().eq('client_key', client.client_key);
+    await supabase.from('clients').delete().eq('id', clientId);
+    router.push('/');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="space-y-4 text-center">
-          <div className="text-xl">Loading...</div>
-          <div className="text-gray-400">Client ID: {clientId}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!client) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="space-y-4 text-center">
-          <div className="text-xl">Client not found</div>
-          <div className="text-gray-400">Client ID: {clientId}</div>
-          <button 
-            onClick={handleBack}
-            className="border border-white rounded-lg px-8 py-3 hover:bg-white hover:text-black transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  //HTML//
-  return (
-    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white p-4 md:p-8">
-      <div className="">
-        {/* Header with User Info and Logout */}
-        <div className="border-5 border-blue-200/25 rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto justify-center md:justify-start">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
-              Pic
-            </div>
-            <div className="text-xs md:text-sm truncate">{userEmail || 'User'}</div>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="w-full md:w-auto border border-blue-200/25 rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
-          >
-            Logout
-          </button>
-        </div>
-
-        {/* User Name Header */}
-        <div className="border-2 w-full md:w-fit border-blue-200/25 rounded-lg p-4 md:p-6 text-center md:text-left text-lg md:text-2xl mb-4 md:mb-6">
-          <span className="hidden md:inline">Client Name - </span>
-          <span className="md:hidden block text-sm text-gray-400 mb-1">Client</span>
-          {client.client_name}
-        </div>
-
-        {/* Display Key and Create Job Buttons */}
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
-          <button 
-            onClick={() => setShowKey(!showKey)}
-            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base truncate"
-          >
-            {showKey ? client.client_key : 'Display Key'}
-          </button>
-          <button 
-            onClick={handleCreateJob}
-            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base"
-          >
-            Create Job
-          </button>
-          <button 
-            onClick={handleBack}
-            className="border border-white rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-white hover:text-black transition-colors text-sm md:text-base"
-          >
-            Back
-          </button>
-          <button 
-            onClick={handleDeleteClient}
-            disabled={deleting}
-            className="border border-red-500 text-red-500 rounded-lg px-6 md:px-8 py-2.5 md:py-3 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed md:ml-auto text-sm md:text-base"
-          >
-            {deleting ? "Deleting..." : "Delete Client"}
-          </button>
-        </div>
-
-        {/* Job List Table */}
-        <div className="border border-white overflow-hidden">
-          {/* Table Header */}
-          <div className="border-b border-white p-3 md:p-4 text-center text-lg md:text-xl font-medium">
-            Job List
-          </div>
-
-          {/* Column Headers - Hidden on mobile */}
-          <div className="hidden md:grid grid-cols-3 border-b border-white">
-            <div className="border-r border-white p-4 text-center font-medium">
-              Job name
-            </div>
-            <div className="border-r border-white p-4 text-center font-medium">
-              Status
-            </div>
-            <div className="p-4 text-center font-medium">
-              Manage Job
-            </div>
-          </div>
-
-          {/* Table Rows */}
-          {jobs.length === 0 ? (
-            <div className="p-6 md:p-8 text-center text-gray-400 text-sm md:text-base">
-              No jobs yet. Create one to get started!
-            </div>
-          ) : (
-            jobs.map((job, index) => (
-              <div 
-                key={job.job_id} 
-                className={`grid grid-cols-1 md:grid-cols-3 ${index !== jobs.length - 1 ? 'border-b border-white' : ''}`}
-              >
-                {/* Mobile Layout */}
-                <div className="md:hidden p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">Job Name</div>
-                      <div className="font-medium">{job.job_name}</div>
-                    </div>
-                    <button 
-                      onClick={() => handleManageJob(job.job_id)}
-                      className="border border-white px-4 py-1.5 text-sm hover:bg-white hover:text-black transition-colors rounded ml-2"
-                    >
-                      Manage
-                    </button>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">Status</div>
-                    <div className="text-sm">{job.number_rev} revisions • ${job.price}</div>
-                  </div>
-                </div>
-
-                {/* Desktop Layout */}
-                <div className="hidden md:block border-r border-white p-6 text-center">
-                  {job.job_name}
-                </div>
-                <div className="hidden md:block border-r border-white p-6 text-center">
-                  {job.number_rev} revisions • ${job.price}
-                </div>
-                <div className="hidden md:flex p-6 justify-center items-center">
-                  <button 
-                    onClick={() => handleManageJob(job.job_id)}
-                    className="border border-white px-6 py-2 hover:bg-white hover:text-black transition-colors"
-                  >
-                    Manage Button
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+  /* loading / empty states */
+  if (loading) return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-xl">Loading…</div>
+    </div>
+  );
+  if (!client) return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="text-xl">Client not found</div>
+        <button onClick={handleBack} className="border border-white rounded-lg px-6 py-2 hover:bg-white hover:text-black transition">Go Back</button>
       </div>
     </div>
   );
+
+  /* ----------  UI  ---------- */
+ return (
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+      {/* ----------  HEADER  ---------- */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center font-semibold text-sm sm:text-base">
+            {userEmail.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-white/60">Signed in as</p>
+            <p className="font-medium truncate text-sm sm:text-base">{userEmail}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button onClick={handleBack} className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 transition text-sm">← Back</button>
+          <button onClick={handleLogout} className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 transition text-sm">Logout</button>
+        </div>
+      </header>
+
+      {/* ----------  CLIENT CARD  ---------- */}
+      <section className="mb-6 sm:mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="sm:col-span-2 p-4 sm:p-6 rounded-2xl bg-white/5 backdrop-blur border border-white/10">
+          <h2 className="text-xl sm:text-2xl font-bold mb-1 break-words">{client.client_name}</h2>
+          <p className="text-sm text-white/60 break-all">{client.client_email}</p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button onClick={() => setShowKey(!showKey)} className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 transition text-sm">{showKey ? 'Hide Key' : 'Show Key'}</button>
+            {showKey && <span className="px-3 py-2 rounded-lg bg-black/20 font-mono text-xs sm:text-sm break-all max-w-full">{client.client_key}</span>}
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 backdrop-blur border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button onClick={handleCreateJob} className="flex-1 px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 transition text-sm">+ New Job</button>
+          <button onClick={handleDeleteClient} disabled={deleting} className="flex-1 px-4 py-2 rounded-lg bg-red-500/20 border border-red-400/30 hover:bg-red-500/30 transition disabled:opacity-50 text-sm">{deleting ? 'Deleting…' : 'Delete'}</button>
+        </div>
+      </section>
+
+      {/* ----------  JOBS  ---------- */}
+      <section>
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Jobs</h3>
+        {jobs.length === 0 ? (
+          <div className="grid place-content-center py-12 sm:py-16 text-center text-white/60">
+            <p className="text-sm sm:text-base">No jobs yet.</p>
+            <button onClick={handleCreateJob} className="mt-2 sm:mt-3 text-blue-400 hover:underline text-sm">Create the first one</button>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {jobs.map((job) => (
+              <div key={job.job_id} className="p-4 sm:p-5 rounded-2xl bg-white/5 backdrop-blur border border-white/10 hover:border-white/20 transition">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-sm sm:text-base break-words">{job.job_name}</h4>
+                    <p className="text-xs sm:text-sm text-white/60 mt-1">{job.number_rev} revisions · ${job.price}</p>
+                  </div>
+                  <span className="px-2 py-1 rounded-full bg-white/10 text-xs shrink-0">{job.number_rev}/{job.price}</span>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => handleManageJob(job.job_id)} className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 transition text-sm">Manage</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  </div>
+);
 }
 
-export default function ManageClient() {
+/* ----------  DEFAULT EXPORT  ---------- */
+export default function ManageClientsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center text-white flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white flex items-center justify-center">
+          <div className="text-xl">Loading…</div>
+        </div>
+      }
+    >
       <ManageClientContent />
     </Suspense>
   );

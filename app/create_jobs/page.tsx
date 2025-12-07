@@ -128,110 +128,101 @@ function CreateJobContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[url('../public/background.jpg')] bg-cover bg-center flex items-center justify-center p-8">
-      
-        <div className="space-y-6">
-          {/* Error Message */}
-          {error && (
-            <div className="border border-red-500 bg-red-500/10 text-red-500 p-4 text-center">
-              {error}
-            </div>
-          )}
-          
-        <div className='grid grid-cols-1 justify-items-center justify-center border m-5'>
-          <div>
-            <h1 className='text-center justify-center  text-xl h-fit mb-4 text-mono rounded'>
-              Create Job
-            </h1>
-            <input
-              type="text"
-              name="job_name"
-              value={newJob.job_name}
-              onChange={(e) => {
-                setNewJob((prev) => ({
-                  ...prev,
-                  job_name: e.target.value,
-                }));
-                if (error) setError("");
-              }}
-              placeholder="Enter Job Name"
-              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
-            />
-          </div>
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
 
-          <div>
-            <input
-              type="number"
-              name="price"
-              value={newJob.price}
-              onChange={(e) => {
-                setNewJob((prev) => ({
-                  ...prev,
-                  price: e.target.value,
-                }));
-                if (error) setError("");
-              }}
-              placeholder="Enter Job Price"
-              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
-            />
-          </div>
+    <div className="w-full max-w-2xl space-y-6">
 
-          <div>
-            <input
-              type="number"
-              name="number_rev"
-              value={newJob.number_rev}
-              onChange={(e) => {
-                setNewJob((prev) => ({
-                  ...prev,
-                  number_rev: e.target.value,
-                }));
-                if (error) setError("");
-              }}
-              placeholder="Allowed Revisions #"
-              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white"
-            />
-          </div>
+      {/* Logo + Service Name */}
+      <div className="flex flex-col items-center mb-6">
+        <img
+          src="/logo.png"
+          alt="Client Side logo"
+          className="h-16 sm:h-20 w-auto mb-3"
+        />
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Client Side</h1>
+      </div>
 
-          <div>
-            <textarea
-              name="description"
-              value={newJob.description}
-              onChange={(e) => {
-                setNewJob((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }));
-                if (error) setError("");
-              }}
-              placeholder="Description of Job"
-              rows={6}
-              className="w-full m-2 bg-black border border-white rounded-lg text-white text-center p-4 focus:outline-none focus:border-white resize-none"
-            />
-          </div>
+      {/* Error bar */}
+      {error && (
+        <div className="border border-red-500 bg-red-500/10 text-red-500 p-3 rounded-lg text-center text-sm sm:text-base">
+          {error}
+        </div>
+      )}
 
-          <div className="pt-6 space-y-4">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full border border-white rounded-lg text-white text-center p-4 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Creating..." : "Create Job"}
-            </button>
-            
-            <button
-              onClick={handleBack}
-              disabled={loading}
-              className="w-full border border-white rounded-lg text-white text-center p-4 hover:bg-white hover:text-black transition-colors disabled:opacity-50"
-            >
-              Back
-            </button>
-            </div>
-          </div>
+      {/* Form card */}
+      <div className="border border-white/30 rounded-2xl p-6 sm:p-8 bg-white/5 backdrop-blur space-y-5">
+
+        <h2 className="text-xl sm:text-2xl font-semibold text-center">Create Job</h2>
+
+        <input
+          type="text"
+          name="job_name"
+          value={newJob.job_name}
+          onChange={(e) => {
+            setNewJob((prev) => ({ ...prev, job_name: e.target.value }));
+            if (error) setError("");
+          }}
+          placeholder="Job Name"
+          className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <input
+          type="number"
+          name="price"
+          value={newJob.price}
+          onChange={(e) => {
+            setNewJob((prev) => ({ ...prev, price: e.target.value }));
+            if (error) setError("");
+          }}
+          placeholder="Price ($)"
+          className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <input
+          type="number"
+          name="number_rev"
+          value={newJob.number_rev}
+          onChange={(e) => {
+            setNewJob((prev) => ({ ...prev, number_rev: e.target.value }));
+            if (error) setError("");
+          }}
+          placeholder="Allowed Revisions #"
+          className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <textarea
+          name="description"
+          value={newJob.description}
+          onChange={(e) => {
+            setNewJob((prev) => ({ ...prev, description: e.target.value }));
+            if (error) setError("");
+          }}
+          placeholder="Description"
+          rows={5}
+          className="w-full bg-black/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+        />
+
+        {/* Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full border border-white/30 rounded-lg px-6 py-3 hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Creating…" : "Create Job"}
+          </button>
+          <button
+            onClick={handleBack}
+            disabled={loading}
+            className="w-full border border-white/30 rounded-lg px-6 py-3 hover:bg-white/20 transition disabled:opacity-50"
+          >
+            Back
+          </button>
         </div>
       </div>
-   
-  );
+    </div>
+  </div>
+);
 }
 
 export default function CreateJob() {

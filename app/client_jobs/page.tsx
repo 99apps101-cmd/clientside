@@ -135,85 +135,74 @@ function ClientJobsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="border border-white p-8 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="border border-white rounded-lg p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-xs">
-              {client.client_name?.charAt(0) || 'C'}
-            </div>
-            <div>
-              <div className="text-lg font-medium">{client.client_name}</div>
-              <div className="text-sm text-gray-400">{client.client_email}</div>
-            </div>
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white px-4 py-6 sm:px-6 sm:py-8">
+    <div className="max-w-5xl mx-auto">
+
+      {/* Logo + Service Name */}
+      <div className="flex flex-col items-center mb-6">
+        <img
+          src="/logo.png"
+          alt="Client Side logo"
+          className="h-16 sm:h-20 w-auto mb-3"
+        />
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Client Side</h1>
+      </div>
+
+      {/* Header card */}
+      <div className="border border-white/30 rounded-2xl p-4 sm:p-6 mb-6 bg-white/5 backdrop-blur flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center font-semibold text-sm sm:text-base">
+            {client.client_name?.charAt(0) || 'C'}
           </div>
-          <button 
-            onClick={handleLogout}
-            className="border border-white rounded-lg px-6 py-2 hover:bg-white hover:text-black transition-colors text-sm"
-          >
-            Logout
-          </button>
+          <div className="min-w-0">
+            <div className="text-base sm:text-lg font-medium truncate">{client.client_name}</div>
+            <div className="text-sm text-white/60 break-all">{client.client_email}</div>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full sm:w-auto border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition text-sm"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Jobs list */}
+      <div className="border border-white/30 rounded-2xl overflow-hidden bg-white/5 backdrop-blur">
+
+        <div className="border-b border-white/30 p-4 text-center text-lg sm:text-xl font-medium">
+          Your Jobs
         </div>
 
-        {/* Jobs Table */}
-        <div className="border border-white">
-          {/* Table Header */}
-          <div className="bg-black border-b border-white p-4 text-center text-xl font-medium">
-            Your Jobs
-          </div>
-
-          {/* Column Headers */}
-          <div className="grid grid-cols-4 border-b border-white">
-            <div className="border-r border-white p-4 text-center font-medium">
-              Job Name
-            </div>
-            <div className="border-r border-white p-4 text-center font-medium">
-              Price
-            </div>
-            <div className="border-r border-white p-4 text-center font-medium">
-              Revisions
-            </div>
-            <div className="p-4 text-center font-medium">
-              Action
-            </div>
-          </div>
-
-          {/* Table Rows */}
-          {jobs.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              No jobs available yet.
-            </div>
-          ) : (
-            jobs.map((job, index) => (
-              <div 
-                key={job.job_id} 
-                className={`grid grid-cols-4 ${index !== jobs.length - 1 ? 'border-b border-white' : ''}`}
+        {jobs.length === 0 ? (
+          <div className="p-8 text-center text-white/60">No jobs available yet.</div>
+        ) : (
+          <div className="divide-y divide-white/30">
+            {jobs.map((job) => (
+              <div
+                key={job.job_id}
+                className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
               >
-                <div className="border-r border-white p-6 text-center">
-                  {job.job_name}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-base sm:text-lg break-words">{job.job_name}</div>
+                  <div className="text-sm text-white/60 mt-1">
+                    ${job.price} · {job.number_rev} revisions
+                  </div>
                 </div>
-                <div className="border-r border-white p-6 text-center">
-                  ${job.price}
-                </div>
-                <div className="border-r border-white p-6 text-center">
-                  {job.number_rev} revisions
-                </div>
-                <div className="p-6 flex justify-center items-center">
-                  <button 
-                    onClick={() => handleViewJob(job.job_id)}
-                    className="border border-white px-6 py-2 rounded-lg hover:bg-white hover:text-black transition-colors"
-                  >
-                    View Details
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleViewJob(job.job_id)}
+                  className="w-full sm:w-auto border border-white/30 rounded-lg px-4 py-2 hover:bg-white/20 transition text-sm"
+                >
+                  View Details
+                </button>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default function ClientJobs() {
