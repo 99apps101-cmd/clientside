@@ -117,123 +117,96 @@ export default function Home() {
   }
 
 return (
-    <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white p-4 md:p-8">
+  <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center text-white">
 
-      {/* Header */}
-      <div className="border border-white p-4 md:p-6 mb-6 md:mb-8 rounded-xl bg-black/20">
-        <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
+    {/* ----------  HEADER  ---------- */}
+    <header className="max-w-5xl mx-auto px-6 pt-8 pb-4">
+      <div className="flex items-center justify-between">
 
-          {/* Profile */}
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 md:w-20 md:h-20 rounded-full border-2 border-white flex items-center justify-center">
-              Pic
-            </div>
-            <div>
-              <div className="text-base md:text-lg font-semibold">
-                {session.user.email}
-              </div>
-              <div className="text-sm md:text-base opacity-80">Name</div>
-            </div>
+        {/* profile */}
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center font-semibold">
+            {session.user.email?.charAt(0).toUpperCase()}
           </div>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-full md:w-auto border border-white rounded-lg px-6 py-2 hover:bg-white hover:text-black transition"
-          >
-            Logout
-          </button>
+          <div>
+            <p className="text-sm text-white/70">Signed in as</p>
+            <p className="font-medium">{session.user.email}</p>
+          </div>
         </div>
+
+        {/* logout */}
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20
+                     hover:bg-white/20 transition"
+        >
+          Logout
+        </button>
       </div>
+    </header>
 
-      {/* Divider */}
-      <div className="w-full h-px bg-white/40 mb-6 md:mb-8" />
+    {/* ----------  MAIN  ---------- */}
+    <main className="max-w-5xl mx-auto px-6 pb-12">
 
-      {/* Create Client */}
-      <div className="flex justify-center mb-10">
+      {/* CTA row */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">Your Clients</h1>
         <button
           onClick={handleCreateClient}
-          className="w-full md:w-auto rounded border border-blue-200/30 bg-blue-200/20 px-10 py-3 text-lg hover:bg-blue-200 hover:text-black transition"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                     bg-blue-500/20 border border-blue-400/30
+                     hover:bg-blue-500/30 transition"
         >
-          Create Client
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>New Client</span>
         </button>
       </div>
 
-      {/* Client List */}
-      <div className="border border-white rounded-xl overflow-hidden bg-black/20">
-
-        <div className="border-b border-white p-4 text-center text-xl font-semibold bg-blue-200/40">
-          Client List
+      {/* ----------  CLIENT CARDS  ---------- */}
+      {clients.length === 0 ? (
+        <div className="grid place-content-center text-center py-20">
+          <p className="text-white/60">No clients yet</p>
+          <button
+            onClick={handleCreateClient}
+            className="mt-4 text-blue-400 hover:underline"
+          >
+            Create your first one
+          </button>
         </div>
-
-        {/* Desktop Column Headers */}
-        <div className="hidden md:grid grid-cols-4 border-b border-white text-center font-medium bg-blue-200/20">
-          <div className="border-r border-white p-4">Client</div>
-          <div className="border-r border-white p-4">Email</div>
-          <div className="border-r border-white p-4">Status</div>
-          <div className="p-4">Manage</div>
-        </div>
-
-        {/* Rows */}
-        {clients.length === 0 ? (
-          <div className="p-6 text-center text-gray-300">No clients yet</div>
-        ) : (
-          clients.map((c, i) => (
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {clients.map((c) => (
             <div
               key={c.id}
-              className={`grid grid-cols-1 md:grid-cols-4 ${
-                i !== clients.length - 1 ? "border-b border-white/40" : ""
-              }`}
+              className="group relative p-5 rounded-2xl bg-white/5 backdrop-blur
+                         border border-white/10 hover:border-white/20
+                         transition"
             >
-              {/* Mobile Card */}
-              <div className="md:hidden p-4 space-y-4">
-
-                <div className="flex justify-between">
-                  <div>
-                    <div className="text-gray-400 text-sm">Client</div>
-                    <div className="font-semibold">{c.client_name}</div>
-                  </div>
-                  <button
-                    onClick={() => handleManageClient(c.id)}
-                    className="border border-blue-200/30 bg-blue-200/20 px-4 py-1 rounded hover:bg-blue-200 hover:text-black transition"
-                  >
-                    Manage
-                  </button>
-                </div>
-
+              <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-gray-400 text-sm">Email</div>
-                  <div className="wrap-break-words text-sm">{c.client_email}</div>
+                  <h3 className="font-semibold text-lg">{c.client_name}</h3>
+                  <p className="text-sm text-white/60 mt-1">{c.client_email}</p>
                 </div>
-
-                <div>
-                  <div className="text-gray-400 text-sm">Status</div>
-                  <div className="text-sm">0 of 0</div>
-                </div>
+                <span className="px-2 py-1 rounded-full bg-white/10 text-xs">0 / 0</span>
               </div>
 
-              {/* Desktop */}
-              <div className="hidden md:flex items-center justify-center border-r border-white p-6">
-                {c.client_name}
-              </div>
-              <div className="hidden md:flex items-center justify-center border-r border-white p-6 wrap-break-words">
-                {c.client_email}
-              </div>
-              <div className="hidden md:flex items-center justify-center border-r border-white p-6">
-                0 of 0
-              </div>
-              <div className="hidden md:flex items-center justify-center p-6">
+              <div className="mt-4 flex items-center gap-2">
                 <button
-                  onClick={() => handleManageClient(c.id)}  
-                  className="border border-blue-200/30 bg-blue-200/20 px-8 py-2 rounded hover:bg-blue-200 hover:text-black transition"
+                  onClick={() => handleManageClient(c.id)}
+                  className="ml-auto px-3 py-1.5 rounded-lg bg-white/10
+                             border border-white/20 hover:bg-white/20
+                             transition text-sm"
                 >
                   Manage
                 </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
+          ))}
+        </div>
+      )}
+    </main>
+  </div>
+);
 }
